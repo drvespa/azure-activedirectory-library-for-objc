@@ -21,39 +21,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#import <Foundation/Foundation.h>
+#import "ADMSIDContext.h"
 
-typedef NS_ENUM(NSInteger, ADTestAccountType)
+@implementation ADMSIDContext
+
+- (instancetype)initWithCorrelationId:(NSUUID *)correlationId
 {
-    ADTestAccountTypeAAD,
-    ADTestAccountTypeAADMDM,
-    ADTestAccountTypePing,
-    ADTestAccountTypeADFSv3,
-    ADTestAccountTypeBlackforest,
-    ADTestAccountTypeShib
-};
-
-typedef NS_ENUM(NSInteger, ADTestProfileType)
-{
-    ADTestProfileTypeBasic,
-    ADTestProfileTypeBasicMDM,
-    ADTestProfileTypeFoci,
-    ADTestProfileTypeSovereign,
-};
-
-@interface ADTestAccount : NSObject
-
-@property (nonatomic) NSString *account;
-@property (nonatomic) NSString *username;
-@property (nonatomic) NSString *password;
-
-@end
-
-@interface ADTestAccountsProvider : NSObject
-
-- (ADTestAccount *)testAccountOfType:(ADTestAccountType)type;
-- (NSArray <ADTestAccount *> *)testAccountsOfType:(ADTestAccountType)type;
-
-- (NSDictionary *)testProfileOfType:(ADTestProfileType)type;
+    self = [super init];
+    
+    if (self)
+    {
+        _correlationId = correlationId;
+    }
+    
+    return self;
+}
 
 @end

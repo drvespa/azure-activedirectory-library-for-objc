@@ -24,16 +24,21 @@
 #import <Foundation/Foundation.h>
 #import "ADTokenCacheItem.h"
 
-@class MSIDAccessToken;
-@class MSIDRefreshToken;
+@class MSIDLegacyAccessToken;
+@class MSIDLegacyRefreshToken;
 @class MSIDLegacySingleResourceToken;
+@class MSIDLegacyTokenCacheKey;
+@class MSIDLegacyTokenCacheItem;
 
 @interface ADTokenCacheItem (MSIDTokens)
 
-- (instancetype)initWithAccessToken:(MSIDAccessToken *)accessToken;
+- (instancetype)initWithLegacyAccessToken:(MSIDLegacyAccessToken *)accessToken;
 
-- (instancetype)initWithRefreshToken:(MSIDRefreshToken *)refreshToken;
-
+- (instancetype)initWithLegacyRefreshToken:(MSIDLegacyRefreshToken *)refreshToken;
 - (instancetype)initWithLegacySingleResourceToken:(MSIDLegacySingleResourceToken *)legacySingleResourceToken;
+- (instancetype)initWithMSIDLegacyTokenCacheItem:(MSIDLegacyTokenCacheItem *)cacheItem;
+
+- (MSIDLegacyTokenCacheKey *)tokenCacheKey;
+- (MSIDLegacyTokenCacheItem *)tokenCacheItem;
 
 @end

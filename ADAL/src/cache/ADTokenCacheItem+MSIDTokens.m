@@ -24,60 +24,95 @@
 #import "ADTokenCacheItem+MSIDTokens.h"
 #import "ADUserInformation.h"
 #import "ADUserInformation+Internal.h"
-#import "MSIDAccessToken.h"
-#import "MSIDRefreshToken.h"
+#import "MSIDLegacyAccessToken.h"
+#import "MSIDLegacyRefreshToken.h"
 #import "MSIDLegacySingleResourceToken.h"
+#import "MSIDLegacyTokenCacheKey.h"
+#import "ADTokenCacheItem+Internal.h"
+#import "MSIDLegacyTokenCacheItem.h"
+#import "NSURL+MSIDExtensions.h"
+
+@interface ADTokenCacheItem()
+
+- (void)calculateHash;
+
+@end
 
 @implementation ADTokenCacheItem (MSIDTokens)
 
-- (instancetype)initWithAccessToken:(MSIDAccessToken *)accessToken
+- (instancetype)initWithLegacyAccessToken:(MSIDLegacyAccessToken *)accessToken
 {
     self = [self initWithBaseToken:accessToken];
     if (self)
     {
         _userInformation = [self createUserInfoWithIdToken:accessToken.idToken
-                                                homeUserId:accessToken.clientInfo.userIdentifier];
+                                             homeAccountId:accessToken.clientInfo.accountIdentifier];
         _accessTokenType = accessToken.accessTokenType;
         _accessToken = accessToken.accessToken;
         _resource = accessToken.resource;
         _expiresOn = accessToken.expiresOn;
     }
     
+    [self calculateHash];
+    
     return self;
 }
 
-- (instancetype)initWithRefreshToken:(MSIDRefreshToken *)refreshToken
+- (instancetype)initWithLegacyRefreshToken:(MSIDLegacyRefreshToken *)refreshToken
 {
     self = [self initWithBaseToken:refreshToken];
     if (self)
     {
         _userInformation = [self createUserInfoWithIdToken:refreshToken.idToken
-                                                homeUserId:refreshToken.clientInfo.userIdentifier];
+                                             homeAccountId:refreshToken.clientInfo.accountIdentifier];
+
         _refreshToken = refreshToken.refreshToken;
         _familyId = refreshToken.familyId;
     }
+    
+    [self calculateHash];
     
     return self;
 }
 
 - (instancetype)initWithLegacySingleResourceToken:(MSIDLegacySingleResourceToken *)legacySingleResourceToken
 {
-    self = [self initWithAccessToken:legacySingleResourceToken];
+    self = [self initWithLegacyAccessToken:legacySingleResourceToken];
     if (self)
     {
         _refreshToken = legacySingleResourceToken.refreshToken;
+        _familyId = legacySingleResourceToken.familyId;
     }
+    
+    [self calculateHash];
     
     return self;
 }
 
+- (instancetype)initWithMSIDLegacyTokenCacheItem:(MSIDLegacyTokenCacheItem *)cacheItem
+{
+    MSIDBaseToken *token = [cacheItem tokenWithType:cacheItem.credentialType];
+    
+    switch (token.credentialType) {
+        case MSIDAccessTokenType:
+            return [self initWithLegacyAccessToken:(MSIDLegacyAccessToken *)token];
+        case MSIDRefreshTokenType:
+            return [self initWithLegacyRefreshToken:(MSIDLegacyRefreshToken *)token];
+        case MSIDLegacySingleResourceTokenType:
+            return [self initWithLegacySingleResourceToken:(MSIDLegacySingleResourceToken *)token];
+            
+        default:
+            return nil;
+    }
+}
+
 #pragma mark - Private
 
-- (ADUserInformation *)createUserInfoWithIdToken:(NSString *)idToken homeUserId:(NSString *)homeUserId
+- (ADUserInformation *)createUserInfoWithIdToken:(NSString *)idToken homeAccountId:(NSString *)homeAccountId
 {
     NSError *error;
     ADUserInformation *userInformation = [ADUserInformation userInformationWithIdToken:idToken
-                                                                            homeUserId:homeUserId
+                                                                         homeAccountId:homeAccountId
                                                                                  error:&error];
     if (error)
     {
@@ -89,16 +124,51 @@
 
 - (instancetype)initWithBaseToken:(MSIDBaseToken *)baseToken
 {
+    if (!baseToken) return nil;
+    
     self = [super init];
     if (self)
     {
         _clientId = baseToken.clientId;
         _authority = baseToken.authority.absoluteString;
-        _additionalServer = baseToken.additionaServerlInfo;
-        _additionalClient = [NSMutableDictionary new];
+        _storageAuthority = baseToken.storageAuthority.absoluteString;
+        _additionalServer = baseToken.additionalServerInfo;
     }
     
     return self;
+}
+
+- (MSIDLegacyTokenCacheKey *)tokenCacheKey
+{
+    NSURL *authorityURL = [NSURL URLWithString:self.storageAuthority ? self.storageAuthority : self.authority];
+
+    MSIDLegacyTokenCacheKey *key = [[MSIDLegacyTokenCacheKey alloc] initWithAuthority:authorityURL
+                                                                             clientId:self.clientId
+                                                                             resource:self.resource
+                                                                         legacyUserId:self.userInformation.userId];
+    return key;
+}
+
+- (MSIDLegacyTokenCacheItem *)tokenCacheItem
+{
+    MSIDLegacyTokenCacheItem *cacheItem = [MSIDLegacyTokenCacheItem new];
+    cacheItem.clientId = self.clientId;
+    cacheItem.oauthTokenType = self.accessTokenType;
+    cacheItem.accessToken = self.accessToken;
+    cacheItem.refreshToken = self.refreshToken;
+    cacheItem.secret = self.accessToken ? self.accessToken : self.refreshToken;
+    cacheItem.idToken = self.userInformation.rawIdToken;
+    cacheItem.target = self.resource;
+    cacheItem.expiresOn = self.expiresOn;
+    cacheItem.cachedAt = nil;
+    cacheItem.familyId = self.familyId;
+    cacheItem.authority = [NSURL URLWithString:self.authority];
+    cacheItem.environment = cacheItem.authority.msidHostWithPortIfNecessary;
+    cacheItem.realm = cacheItem.authority.msidTenant;
+    cacheItem.homeAccountId = self.userInformation.homeAccountId;
+    cacheItem.credentialType = [MSIDCredentialTypeHelpers credentialTypeWithRefreshToken:self.refreshToken accessToken:self.accessToken];
+    cacheItem.additionalInfo = self.additionalServer;
+    return cacheItem;
 }
 
 @end

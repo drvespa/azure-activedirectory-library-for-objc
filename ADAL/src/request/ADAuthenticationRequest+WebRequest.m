@@ -36,15 +36,14 @@
 #import "ADTokenCacheItem+Internal.h"
 #import "ADWebAuthRequest.h"
 #import "NSString+ADURLExtensions.h"
-
 #import "MSIDDeviceId.h"
-
-#import <libkern/OSAtomic.h>
+#import "MSIDAADV1Oauth2Factory.h"
+#import "ADAuthenticationErrorConverter.h"
 
 @implementation ADAuthenticationRequest (WebRequest)
 
 - (void)executeRequest:(NSDictionary *)request_data
-            completion:(ADAuthenticationCallback)completionBlock
+            completion:(MSIDTokenResponseCallback)completionBlock
 {
     NSString *authority = [NSString msidIsStringNilOrBlank:_cloudAuthority] ? _context.authority : _cloudAuthority;
     NSString* urlString = [authority stringByAppendingString:MSID_OAUTH2_TOKEN_SUFFIX];
@@ -55,20 +54,25 @@
      {
          if (error)
          {
-             completionBlock([ADAuthenticationResult resultFromError:error]);
+             completionBlock(nil, error);
              [req invalidate];
              return;
          }
-         
-         //Prefill the known elements in the item. These can be overridden by the response:
-         ADTokenCacheItem* item = [ADTokenCacheItem new];
-         item.resource = [_requestParams resource];
-         item.clientId = [_requestParams clientId];
-         item.authority = authority;
-         ADAuthenticationResult* result = [item processTokenResponse:response
-                                                         fromRefresh:NO
-                                                requestCorrelationId:[_requestParams correlationId]];
-         completionBlock(result);
+
+         MSIDAADV1Oauth2Factory *factory = [MSIDAADV1Oauth2Factory new];
+
+         NSError *msidError = nil;
+         MSIDTokenResponse *tokenResponse = [factory tokenResponseFromJSON:response context:nil error:&msidError];
+
+         if (!tokenResponse)
+         {
+             ADAuthenticationError *adError = [ADAuthenticationErrorConverter ADAuthenticationErrorFromMSIDError:msidError];
+             completionBlock(nil, adError);
+         }
+         else
+         {
+             completionBlock(tokenResponse, nil);
+         }
          
          [req invalidate];
      }];
@@ -98,7 +102,7 @@
 // Encodes the state parameter for a protocol message
 - (NSString *)encodeProtocolState
 {
-    return [[[NSMutableDictionary dictionaryWithObjectsAndKeys:[_requestParams authority], @"a", [_requestParams resource], @"r", _requestParams.scope, @"s", nil]
+    return [[[NSMutableDictionary dictionaryWithObjectsAndKeys:[_requestParams authority], @"a", [_requestParams resource], @"r", _requestParams.scopesString, @"s", nil]
              msidURLFormEncode] msidBase64UrlEncode];
 }
 
@@ -270,9 +274,9 @@
                        @"1", @"nux",
                        @"none", @"prompt", nil];
         
-        if (![NSString msidIsStringNilOrBlank:_requestParams.scope])
+        if (![NSString msidIsStringNilOrBlank:_requestParams.scopesString])
         {
-            [requestData setObject:_requestParams.scope forKey:MSID_OAUTH2_SCOPE];
+            [requestData setObject:_requestParams.scopesString forKey:MSID_OAUTH2_SCOPE];
         }
         
         if ([_requestParams identifier] && [[_requestParams identifier] isDisplayable] && ![NSString msidIsStringNilOrBlank:[_requestParams identifier].userId])

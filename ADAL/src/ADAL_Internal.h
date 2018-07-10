@@ -27,7 +27,7 @@
 // through build script. Don't change its format unless changing build script as well.)
 #define ADAL_VER_HIGH       2
 #define ADAL_VER_LOW        6
-#define ADAL_VER_PATCH      2
+#define ADAL_VER_PATCH      3
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
@@ -58,10 +58,12 @@
 #import "ADALConstants.h"
 
 @class ADAuthenticationResult;
+@class MSIDTokenResponse;
 
 /*! The completion block declaration. */
 typedef void(^ADAuthenticationCallback)(ADAuthenticationResult* result);
 typedef void(^ADAuthorizationCodeCallback)(NSString*, ADAuthenticationError*);
+typedef void(^MSIDTokenResponseCallback)(MSIDTokenResponse *response, ADAuthenticationError *error);
 
 #if TARGET_OS_IPHONE
 //iOS:

@@ -31,7 +31,7 @@
     NSString *_uniqueId;
     NSString *_rawIdToken;
     NSDictionary *_allClaims;
-    NSString *_homeUserId;
+    NSString *_homeAccountId;
 }
 
 /*! Factory method to extract user information from the AAD id_token parameter.
@@ -40,13 +40,13 @@
 + (ADUserInformation *)userInformationWithIdToken:(NSString *)idToken
                                             error:(ADAuthenticationError * __autoreleasing *)error;
 
-/* This is the only unique property, as it is used in the key generation for the cache.
+/* This is the only unique property, as it is used in the key generation for the cache.user
  Two ADUserInformation objects are considered the same if this property is the same. Using RequiredDisplayableId
  will validate against this property. */
 @property (readonly) NSString *userId;
 
-/*! Unique AAD user identifier across tenants based on user's home OID/home tenantId. */
-@property (readonly) NSString *homeUserId;
+/*! Unique AAD account identifier across tenants based on user's home OID/home tenantId. */
+@property (readonly) NSString *homeAccountId;
 
 /*! Determines whether userId is displayable */
 @property (readonly) BOOL userIdDisplayable;

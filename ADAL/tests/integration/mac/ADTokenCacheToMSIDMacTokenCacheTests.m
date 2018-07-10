@@ -25,12 +25,12 @@
 #import "XCTestCase+TestHelperMethods.h"
 #import "ADTokenCacheItem.h"
 #import "MSIDMacTokenCache.h"
-#import "ADTokenCache.h"
-#import "ADTokenCache+Internal.h"
-#import "MSIDTokenCacheKey.h"
+#import "ADLegacyMacTokenCache.h"
+#import "MSIDLegacyTokenCacheKey.h"
 #import "MSIDLegacyTokenCacheKey.h"
 #import "ADUserInformation.h"
 #import "ADTokenCacheKey.h"
+#import "MSIDLegacyTokenCacheItem.h"
 
 @interface ADTokenCacheToMSIDMacTokenCacheTests : XCTestCase
 
@@ -52,7 +52,7 @@
 
 - (void)testMSIDMacTokenCacheGetItemFromADALBlob_whenBlobContainsItem_shouldReturnThatItem
 {
-    ADTokenCache *adTokenCache = [ADTokenCache new];
+    ADLegacyMacTokenCache *adTokenCache = [ADLegacyMacTokenCache new];
     NSDate *date = [NSDate new];
     NSDictionary *additionalServerInfo = @{@"key1": @"value1"};
     NSData *sessionKey = [@"test" dataUsingEncoding:NSUTF8StringEncoding];
@@ -72,19 +72,19 @@
     XCTAssertTrue(result);
 
     MSIDMacTokenCache *msidMacTokenCache = [MSIDMacTokenCache new];
-    MSIDTokenCacheKey *msidTokenCacheKey =
-    [MSIDLegacyTokenCacheKey keyWithAuthority:[[NSURL alloc] initWithString:TEST_AUTHORITY]
-                                     clientId:TEST_CLIENT_ID
-                                     resource:TEST_RESOURCE
-                                 legacyUserId:TEST_USER_ID];
 
-    // Read from blob created by ADTokenCache.
+    MSIDLegacyTokenCacheKey *msidTokenCacheKey = [[MSIDLegacyTokenCacheKey alloc] initWithAuthority:[[NSURL alloc] initWithString:TEST_AUTHORITY]
+                                                                                           clientId:TEST_CLIENT_ID
+                                                                                           resource:TEST_RESOURCE
+                                                                                       legacyUserId:TEST_USER_ID];
+
+    // Read from blob created by ADLegacyMacTokenCache.
     NSData *data = [adTokenCache serialize];
     result = [msidMacTokenCache deserialize:data error:&error];
     XCTAssertNil(error);
     XCTAssertTrue(result);
 
-    MSIDTokenCacheItem *tokenCacheItem = [msidMacTokenCache tokenWithKey:msidTokenCacheKey serializer:nil context:nil error:&error];
+    MSIDCredentialCacheItem *tokenCacheItem = [msidMacTokenCache tokenWithKey:msidTokenCacheKey serializer:nil context:nil error:&error];
 
     XCTAssertNil(error);
     XCTAssertNotNil(tokenCacheItem);
@@ -96,13 +96,12 @@
 {
     MSIDMacTokenCache *msidMacTokenCache = [MSIDMacTokenCache new];
 
-    MSIDTokenCacheKey *msidTokenCacheKey =
-    [MSIDLegacyTokenCacheKey keyWithAuthority:[[NSURL alloc] initWithString:TEST_AUTHORITY]
-                                     clientId:TEST_CLIENT_ID
-                                     resource:TEST_RESOURCE
-                                 legacyUserId:TEST_USER_ID];
+    MSIDLegacyTokenCacheKey *msidTokenCacheKey = [[MSIDLegacyTokenCacheKey alloc] initWithAuthority:[[NSURL alloc] initWithString:TEST_AUTHORITY]
+                                                                                           clientId:TEST_CLIENT_ID
+                                                                                           resource:TEST_RESOURCE
+                                                                                       legacyUserId:TEST_USER_ID];
 
-    MSIDTokenCacheItem *tokenCacheItem = [self adCreateAccessMSIDTokenCacheItem];
+    MSIDLegacyTokenCacheItem *tokenCacheItem = [self adCreateAccessMSIDTokenCacheItem];
 
     NSError *error;
     BOOL result = [msidMacTokenCache saveToken:tokenCacheItem key:msidTokenCacheKey serializer:nil context:nil error:nil];
@@ -111,7 +110,7 @@
     XCTAssertTrue(result);
 
     ADTokenCacheKey *key = [ADTokenCacheKey keyWithAuthority:TEST_AUTHORITY resource:TEST_RESOURCE clientId:TEST_CLIENT_ID error:nil];
-    ADTokenCache *adTokenCache = [ADTokenCache new];
+    ADLegacyMacTokenCache *adTokenCache = [ADLegacyMacTokenCache new];
 
     // Read from blob created by MSIDMacTokenCache.
     NSData *data = [msidMacTokenCache serialize];

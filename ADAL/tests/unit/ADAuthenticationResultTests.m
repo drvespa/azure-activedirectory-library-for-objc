@@ -28,6 +28,7 @@
 #import "XCTestCase+TestHelperMethods.h"
 #import "ADUserInformation.h"
 #import "MSIDClientInfo.h"
+#import "MSIDBrokerResponse.h"
 
 @interface ADAuthenticationResultTests : ADTestCase
 
@@ -133,12 +134,18 @@
                                @"client_info" : [self adCreateClientInfo].rawClientInfo
                                };
     
-    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:response];
+    NSError *error = nil;
+    MSIDBrokerResponse *brokerResponse = [[MSIDBrokerResponse alloc] initWithDictionary:response error:&error];
+    
+    XCTAssertNotNil(brokerResponse);
+    XCTAssertNil(error);
+    
+    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:brokerResponse];
     
     XCTAssertNotNil(result);
     XCTAssertNil(result.error);
     XCTAssertNotNil(result.tokenCacheItem);
-    XCTAssertEqual(result.tokenCacheItem.expiresOn.timeIntervalSince1970, 1444166530.336707);
+    XCTAssertEqual(result.tokenCacheItem.expiresOn.timeIntervalSince1970, 1444166530);
     XCTAssertEqualObjects(result.tokenCacheItem.accessToken, @"MyFakeAccessToken");
     XCTAssertEqualObjects(result.tokenCacheItem.refreshToken, @"MyFakeRefreshToken");
     XCTAssertEqualObjects(result.tokenCacheItem.resource, @"MyFakeResource");
@@ -165,12 +172,18 @@
                                @"client_info" : [self adCreateClientInfo].rawClientInfo
                                };
     
-    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:response];
+    NSError *error = nil;
+    MSIDBrokerResponse *brokerResponse = [[MSIDBrokerResponse alloc] initWithDictionary:response error:&error];
+    
+    XCTAssertNotNil(brokerResponse);
+    XCTAssertNil(error);
+    
+    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:brokerResponse];
     
     XCTAssertNotNil(result);
     XCTAssertNil(result.error);
     XCTAssertNotNil(result.tokenCacheItem);
-    XCTAssertEqual(result.tokenCacheItem.expiresOn.timeIntervalSince1970, 1444166530.336707);
+    XCTAssertEqual(result.tokenCacheItem.expiresOn.timeIntervalSince1970, 1444166530);
     XCTAssertEqualObjects(result.tokenCacheItem.accessToken, @"MyFakeAccessToken");
     XCTAssertEqualObjects(result.tokenCacheItem.refreshToken, @"MyFakeRefreshToken");
     XCTAssertEqualObjects(result.tokenCacheItem.resource, @"MyFakeResource");
@@ -178,7 +191,7 @@
     XCTAssertEqualObjects(result.tokenCacheItem.userInformation.userId, @"myfakeuser@contoso.com");
 }
 
-- (void)testResultFromBrokerResponse_whenResponseIsValidWithSpecificTenantAndVTFlagNoClientInfo_shouldReturnResultWithTokenCacheItemWithNilAccessToken
+- (void)testResultFromBrokerResponse_whenResponseIsValidWithSpecificTenantAndVTFlagNoClientInfo_shouldReturnResultWithTokenCacheItemWithAndAccessToken
 {
     // Not a complete IDToken, but enough to get past the parser. If you're seeing this test fail and have recently
     // changed the idtoken code then this might have to be tweaked.
@@ -196,13 +209,20 @@
                                @"user_id" : @"myfakeuser@contoso.com"
                                };
     
-    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:response];
+    NSError *error = nil;
+    MSIDBrokerResponse *brokerResponse = [[MSIDBrokerResponse alloc] initWithDictionary:response error:&error];
+    
+    XCTAssertNotNil(brokerResponse);
+    XCTAssertNil(error);
+    
+    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:brokerResponse];
     
     XCTAssertNotNil(result);
     XCTAssertNil(result.error);
     XCTAssertNotNil(result.tokenCacheItem);
-    XCTAssertEqual(result.tokenCacheItem.expiresOn.timeIntervalSince1970, 1444166530.336707);
-    XCTAssertNil(result.tokenCacheItem.accessToken);
+    XCTAssertNil(result.tokenCacheItem.userInformation.homeAccountId);
+    XCTAssertEqual(result.tokenCacheItem.expiresOn.timeIntervalSince1970, 1444166530);
+    XCTAssertEqualObjects(result.tokenCacheItem.accessToken, @"MyFakeAccessToken");
     XCTAssertEqualObjects(result.tokenCacheItem.refreshToken, @"MyFakeRefreshToken");
     XCTAssertEqualObjects(result.tokenCacheItem.resource, @"MyFakeResource");
     XCTAssertEqualObjects(result.tokenCacheItem.clientId, @"27AD83C9-FC05-4A6C-AF01-36EDA42ED18F");
@@ -227,12 +247,18 @@
                                @"client_info" : [self adCreateClientInfo].rawClientInfo
                                };
     
-    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:response];
+    NSError *error = nil;
+    MSIDBrokerResponse *brokerResponse = [[MSIDBrokerResponse alloc] initWithDictionary:response error:&error];
+    
+    XCTAssertNotNil(brokerResponse);
+    XCTAssertNil(error);
+    
+    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:brokerResponse];
     
     XCTAssertNotNil(result);
     XCTAssertNil(result.error);
     XCTAssertNotNil(result.tokenCacheItem);
-    XCTAssertEqual(result.tokenCacheItem.expiresOn.timeIntervalSince1970, 1444166530.336707);
+    XCTAssertEqual(result.tokenCacheItem.expiresOn.timeIntervalSince1970, 1444166530);
     XCTAssertEqualObjects(result.tokenCacheItem.accessToken, @"MyFakeAccessToken");
     XCTAssertEqualObjects(result.tokenCacheItem.refreshToken, @"MyFakeRefreshToken");
     XCTAssertEqualObjects(result.tokenCacheItem.resource, @"MyFakeResource");
@@ -250,7 +276,13 @@
                                @"correlation_id" : @"5EF4B8D0-A734-441B-887D-FBB8257C0784"
                                };
     
-    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:response];
+    NSError *error = nil;
+    MSIDBrokerResponse *brokerResponse = [[MSIDBrokerResponse alloc] initWithDictionary:response error:&error];
+    
+    XCTAssertNotNil(brokerResponse);
+    XCTAssertNil(error);
+    
+    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:brokerResponse];
     
     XCTAssertNotNil(result);
     XCTAssertNotNil(result.error);
@@ -270,7 +302,13 @@
                                @"correlation_id" : @"5EF4B8D0-A734-441B-887D-FBB8257C0784"
                                };
 
-    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:response];
+    NSError *error = nil;
+    MSIDBrokerResponse *brokerResponse = [[MSIDBrokerResponse alloc] initWithDictionary:response error:&error];
+    
+    XCTAssertNotNil(brokerResponse);
+    XCTAssertNil(error);
+    
+    ADAuthenticationResult *result = [ADAuthenticationResult resultFromBrokerResponse:brokerResponse];
     
     XCTAssertNotNil(result);
     XCTAssertNil(result.tokenCacheItem);
@@ -289,7 +327,13 @@
                                @"correlation_id" : @"5EF4B8D0-A734-441B-887D-FBB8257C0784"
                                };
     
-    ADAuthenticationResult* result = [ADAuthenticationResult resultFromBrokerResponse:response];
+    NSError *error = nil;
+    MSIDBrokerResponse *brokerResponse = [[MSIDBrokerResponse alloc] initWithDictionary:response error:&error];
+    
+    XCTAssertNotNil(brokerResponse);
+    XCTAssertNil(error);
+    
+    ADAuthenticationResult* result = [ADAuthenticationResult resultFromBrokerResponse:brokerResponse];
     
     XCTAssertNotNil(result);
     XCTAssertNil(result.tokenCacheItem);
